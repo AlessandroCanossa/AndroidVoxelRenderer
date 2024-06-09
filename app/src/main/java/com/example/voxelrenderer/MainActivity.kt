@@ -49,6 +49,7 @@ fun GlView(modifier: Modifier) {
             preserveEGLContextOnPause = true
 
             val renderer = VoxelRenderer()
+            renderer.setContextAndSurface(context, this)
             setRenderer(renderer)
         }
     })
