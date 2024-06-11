@@ -29,21 +29,20 @@ open class BasicRenderer(r: Float, g: Float, b: Float, a: Float) : GLSurfaceView
         this._surface = surface
     }
 
-    override fun onSurfaceCreated(gL10: GL10?, config: EGLConfig?) {
+    override fun onSurfaceCreated(gl10: GL10?, config: EGLConfig?) {
         gl.glClearColor(clearScreen[0], clearScreen[1], clearScreen[2], clearScreen[3])
         Log.v(TAG, "onSurfaceCreated " + Thread.currentThread().name)
         Log.v(TAG, gl.glGetString(gl.GL_VERSION))
     }
 
-    override fun onSurfaceChanged(gL10: GL10?, width: Int, height: Int) {
+    override fun onSurfaceChanged(gl10: GL10?, width: Int, height: Int) {
         Log.v(TAG, "onSurfaceChanged " + Thread.currentThread().name)
         gl.glViewport(0, 0, width, height)
         currentScreen.x = width
         currentScreen.y = height
     }
 
-    override fun onDrawFrame(gL10: GL10?) {
+    override fun onDrawFrame(gl10: GL10?) {
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
     }
-
 }
