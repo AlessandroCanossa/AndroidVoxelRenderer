@@ -1,26 +1,19 @@
 package com.example.voxelrenderer.utils
 
-import android.graphics.Bitmap
-import android.graphics.Color.rgb
+import android.opengl.Matrix
 import android.util.Log
 import java.io.BufferedReader
 import java.io.InputStream
 
-
-typealias Translation = FloatArray
-typealias TranslationList = ArrayList<Translation>
-
 data class Voxel(val x: Int, val y: Int, val z: Int, val value: Int)
 
 class VlyLoader(private val inputStream: InputStream) {
-    private lateinit var occupancyGrid: ArrayList<Voxel>
+    private val voxels = ArrayList<Voxel>()
     private var numX = 0
     private var numY = 0
     private var numZ = 0
     private var numVoxels = 0
-    private val colors = ArrayList<Int>()
-
-    private lateinit var bitmap: Bitmap
+    private val colors = ArrayList<Color>()
 
     fun load() {
         val lines = inputStream.bufferedReader().use(
@@ -53,15 +46,21 @@ class VlyLoader(private val inputStream: InputStream) {
             val data = line.split(' ').map { it.toInt() }
             if (voxelCount < numVoxels) {
                 val (x, y, z, value) = data
-                occupancyGrid.add(Voxel(x, y, z, value))
+                voxels.add(Voxel(x, y, z, value))
                 voxelCount++
             } else {
-                colors.add(rgb(data[1], data[2], data[3]))
+                colors.add(
+                    Color(
+                        data[1].toFloat() / 255.0f,
+                        data[2].toFloat() / 255.0f,
+                        data[3].toFloat() / 255.0f
+                    )
+                )
             }
         }
     }
 
-    fun parse() {
+    fun parse(): List<Mesh> {
         val cubeVertices = floatArrayOf(
             // front face
             1.0f, 1.0f, 1.0f,
@@ -83,37 +82,24 @@ class VlyLoader(private val inputStream: InputStream) {
             3, 2, 6, 3, 6, 7, // bottom face
         )
 
-        val translations = HashMap<Int, TranslationList>()
+        return voxels
+            .groupBy { it.value }
+            .map { (key, value) ->
+                val translations = value.map {
+                    val matrix = FloatArray(16)
 
-        val prova = occupancyGrid.groupBy { it.value }
+                    // Translate the voxel to the center
+                    val x = it.x - numX / 2
+                    val y = it.y - numY / 2
+                    val z = it.z - numZ / 2
 
-        prova.forEach { t, u ->
-//            val translationList = ArrayList<FloatArray>()
-//            u.forEach { voxel ->
-//                val x = voxel.x.toFloat()
-//                val y = voxel.y.toFloat()
-//                val z = voxel.z.toFloat()
-//                translationList.add(floatArrayOf(x, y, z))
-//            }
-//            translations[t] = translationList
-        }
+                    Matrix.setIdentityM(matrix, 0)
+//                    Matrix.scaleM(matrix, 0, 0.01f, 0.01f, 0.01f)
+                    Matrix.translateM(matrix, 0, -x.toFloat(), z.toFloat(), -y.toFloat())
+                    matrix
+                }
 
-
-//        val texCoords = floatArrayOf(
-//            1.0f, 1.0f,
-//            0.0f, 1.0f,
-//            0.0f, 0.0f,
-//            1.0f, 0.0f,
-//            1.0f, 1.0f,
-//            0.0f, 1.0f,
-//            0.0f, 0.0f,
-//            1.0f, 0.0f,
-//        )
-//        val width = 1.0 / colors.size.toDouble()
-//
-//
-//
-//        bitmap =
-//            Bitmap.createBitmap(colors.toIntArray(), colors.size, 1, Bitmap.Config.ARGB_8888)
+                Mesh(cubeVertices, indices, colors[key], translations)
+            }
     }
 }
