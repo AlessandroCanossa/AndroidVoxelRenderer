@@ -1,5 +1,6 @@
 package com.example.voxelrenderer
 
+import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.content.Context
 import android.opengl.GLSurfaceView
@@ -29,28 +30,36 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@SuppressLint("ClickableViewAccessibility")
 @Composable
 fun GlView(modifier: Modifier) {
-    AndroidView(factory = { context ->
-        GLSurfaceView(context).apply {
-            val activityManager =
-                context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-            val reqGlesVersion = activityManager.deviceConfigurationInfo.reqGlEsVersion
+    AndroidView(
+        factory = { context ->
+            GLSurfaceView(context).apply {
+                val activityManager =
+                    context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+                val reqGlesVersion = activityManager.deviceConfigurationInfo.reqGlEsVersion
 
-            val supported = if (reqGlesVersion >= 0x30000) {
-                3
-            } else if (reqGlesVersion >= 0x20000) {
-                2
-            } else {
-                1
+                val supported = if (reqGlesVersion >= 0x30000) {
+                    3
+                } else if (reqGlesVersion >= 0x20000) {
+                    2
+                } else {
+                    1
+                }
+
+                setEGLContextClientVersion(supported)
+                preserveEGLContextOnPause = true
+
+                val renderer = VoxelRenderer()
+                renderer.setContextAndSurface(context, this)
+                setRenderer(renderer)
+
+                setOnTouchListener { _, event ->
+                    renderer.scaleDetector.onTouchEvent(event) ||
+                            renderer.gestureDetector.onTouchEvent(event)
+                }
+
             }
-
-            setEGLContextClientVersion(supported)
-            preserveEGLContextOnPause = true
-
-            val renderer = VoxelRenderer()
-            renderer.setContextAndSurface(context, this)
-            setRenderer(renderer)
-        }
-    })
+        })
 }

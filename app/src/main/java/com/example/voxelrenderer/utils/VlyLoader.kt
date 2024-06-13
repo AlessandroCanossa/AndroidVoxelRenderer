@@ -7,19 +7,19 @@ import java.io.InputStream
 
 data class Voxel(val x: Int, val y: Int, val z: Int, val value: Int)
 
-class VlyLoader(private val inputStream: InputStream) {
-    private val voxels = ArrayList<Voxel>()
-    private var numX = 0
-    private var numY = 0
-    private var numZ = 0
-    private var numVoxels = 0
-    private val colors = ArrayList<Color>()
+class VlyLoader(private val mInputStream: InputStream) {
+    private val mVoxels = ArrayList<Voxel>()
+    private var mNumX = 0
+    private var mNumY = 0
+    private var mNumZ = 0
+    private var mNumVoxels = 0
+    private val mColors = ArrayList<Color>()
 
     fun load() {
-        val lines = inputStream.bufferedReader().use(
+        val lines = mInputStream.bufferedReader().use(
             BufferedReader::readLines
         )
-        inputStream.close()
+        mInputStream.close()
 
         lines[0].split(' ').run {
             if (!this[0].contains("grid_size") || this.size < 4) {
@@ -27,12 +27,12 @@ class VlyLoader(private val inputStream: InputStream) {
                 throw Exception("Wrong file type passed")
             }
 
-            numX = this[1].toInt()
-            numY = this[2].toInt()
-            numZ = this[3].toInt()
+            mNumX = this[1].toInt()
+            mNumY = this[2].toInt()
+            mNumZ = this[3].toInt()
         }
 
-        numVoxels = lines[1].split(' ').run {
+        mNumVoxels = lines[1].split(' ').run {
             if (!this[0].contains("voxel_num") || this.size < 2) {
                 Log.e("VlyLoader", "Vly file miss voxel num")
                 throw Exception("Vly file miss voxel num")
@@ -44,12 +44,12 @@ class VlyLoader(private val inputStream: InputStream) {
         var voxelCount = 0
         lines.subList(2, lines.size).forEach { line ->
             val data = line.split(' ').map { it.toInt() }
-            if (voxelCount < numVoxels) {
+            if (voxelCount < mNumVoxels) {
                 val (x, y, z, value) = data
-                voxels.add(Voxel(x, y, z, value))
+                mVoxels.add(Voxel(x, y, z, value))
                 voxelCount++
             } else {
-                colors.add(
+                mColors.add(
                     Color(
                         data[1].toFloat() / 255.0f,
                         data[2].toFloat() / 255.0f,
@@ -82,24 +82,25 @@ class VlyLoader(private val inputStream: InputStream) {
             3, 2, 6, 3, 6, 7, // bottom face
         )
 
-        return voxels
+        return mVoxels
             .groupBy { it.value }
             .map { (key, value) ->
                 val translations = value.map {
                     val matrix = FloatArray(16)
 
                     // Translate the voxel to the center
-                    val x = it.x - numX / 2
-                    val y = it.y - numY / 2
-                    val z = it.z - numZ / 2
+                    val x = it.x - mNumX / 2
+                    val y = it.y - mNumY / 2
+                    val z = it.z - mNumZ / 2
 
                     Matrix.setIdentityM(matrix, 0)
-//                    Matrix.scaleM(matrix, 0, 0.01f, 0.01f, 0.01f)
+                    Log.d("VlyLoader", "x: $x, y: $z, z: $y")
                     Matrix.translateM(matrix, 0, -x.toFloat(), z.toFloat(), -y.toFloat())
+                    Matrix.scaleM(matrix, 0, 0.5f, 0.5f, 0.5f)
                     matrix
                 }
 
-                Mesh(cubeVertices, indices, colors[key], translations)
+                Mesh(cubeVertices, indices, mColors[key], translations)
             }
     }
 }

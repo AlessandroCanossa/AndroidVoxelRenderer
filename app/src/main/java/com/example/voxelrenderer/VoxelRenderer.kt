@@ -1,7 +1,12 @@
 package com.example.voxelrenderer
 
+import android.content.Context
+import android.opengl.GLSurfaceView
 import android.opengl.Matrix
 import android.util.Log
+import android.view.GestureDetector
+import android.view.MotionEvent
+import android.view.ScaleGestureDetector
 import com.example.voxelrenderer.utils.Mesh
 import com.example.voxelrenderer.utils.Shader
 import com.example.voxelrenderer.utils.VlyLoader
@@ -10,30 +15,64 @@ import javax.microedition.khronos.opengles.GL10
 import android.opengl.GLES32 as gl
 
 class VoxelRenderer : BasicRenderer() {
-    private lateinit var shader: Shader
-    private val vao = IntArray(1)
+    private lateinit var mShader: Shader
 
-    private var VPLoc: Int = 0
-    private var colorLoc: Int = 0
+    private var mVPLoc: Int = 0
+    private var mColorLoc: Int = 0
 
-    private val viewM = FloatArray(16)
-    private val projM = FloatArray(16)
-    private val temp = FloatArray(16)
+    private val mViewM = FloatArray(16)
+    private val mProjM = FloatArray(16)
+    private val mTemp = FloatArray(16)
 
-    private lateinit var meshes: List<Mesh>
+    private lateinit var mMeshes: List<Mesh>
 
-    private var prevTime = System.nanoTime()
-    private var numFrame = 0
+    private var mPrevTime = System.nanoTime()
+    private var mNumFrame = 0
+
+    private var mScaleFactor = 1.0f
+    private var mRotation = 0.0f
+
+    private val scaleListener = object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+        override fun onScale(detector: ScaleGestureDetector): Boolean {
+            if (detector.scaleFactor == 1f) return false
+            mScaleFactor *= detector.scaleFactor
+            Log.v(TAG, "Scale factor: $mScaleFactor")
+            return true
+        }
+    }
+    lateinit var scaleDetector: ScaleGestureDetector
+
+    private val gestureListener = object : GestureDetector.SimpleOnGestureListener() {
+        override fun onScroll(
+            e1: MotionEvent?,
+            e2: MotionEvent,
+            distanceX: Float,
+            distanceY: Float
+        ): Boolean {
+            if (distanceX == 0f) return false
+
+            mRotation += distanceX
+            Log.v(TAG, "Rotation: $mRotation")
+            return true
+        }
+    }
+    lateinit var gestureDetector: GestureDetector
 
     init {
-        Matrix.setIdentityM(viewM, 0)
-        Matrix.setIdentityM(projM, 0)
+        Matrix.setIdentityM(mViewM, 0)
+        Matrix.setIdentityM(mProjM, 0)
+    }
+
+    override fun setContextAndSurface(context: Context, surface: GLSurfaceView) {
+        super.setContextAndSurface(context, surface)
+        scaleDetector = ScaleGestureDetector(this.context, scaleListener)
+        gestureDetector = GestureDetector(this.context, gestureListener)
     }
 
     override fun onSurfaceCreated(gl10: GL10?, config: EGLConfig?) {
         super.onSurfaceCreated(gl10, config)
 
-        shader = Shader(
+        mShader = Shader(
             context.assets.open("shader.vert"),
             context.assets.open("shader.frag")
         )
@@ -41,12 +80,15 @@ class VoxelRenderer : BasicRenderer() {
         val loader = VlyLoader(context.assets.open("simple.vly"))
         loader.load()
 
-        meshes = loader.parse().onEach { it.setupMesh() }
+        mMeshes = loader.parse().onEach { it.setupMesh() }
 
-        VPLoc = shader.getUniformLocation("VP")
-        colorLoc = shader.getUniformLocation("color")
+        mVPLoc = mShader.getUniformLocation("VP")
+        mColorLoc = mShader.getUniformLocation("color")
 
         gl.glEnable(gl.GL_DEPTH_TEST)
+//        gl.glEnable(gl.GL_CULL_FACE)
+//        gl.glCullFace(gl.GL_BACK)
+//        gl.glFrontFace(gl.GL_CCW)
     }
 
     override fun onSurfaceChanged(gl10: GL10?, width: Int, height: Int) {
@@ -54,10 +96,10 @@ class VoxelRenderer : BasicRenderer() {
         val h = if (height == 0) 1 else height
         val aspect = (width.toFloat()) / (h.toFloat())
 
-        Matrix.perspectiveM(projM, 0, 45f, aspect, 0.1f, 100f)
+        Matrix.perspectiveM(mProjM, 0, 45f, aspect, 0.1f, 100f)
         Matrix.setLookAtM(
-            viewM, 0,
-            0f, 0f, 4f,
+            mViewM, 0,
+            0f, 0f, 5f,
             0f, 0f, 0f,
             0f, 1f, 0f
         )
@@ -68,13 +110,13 @@ class VoxelRenderer : BasicRenderer() {
 
         countFPS()
 
-        Matrix.multiplyMM(temp, 0, projM, 0, viewM, 0)
+        Matrix.multiplyMM(mTemp, 0, mProjM, 0, mViewM, 0)
 
-        shader.use {
-            meshes.forEach { mesh ->
+        mShader.use {
+            mMeshes.forEach { mesh ->
                 mesh.draw { color ->
-                    gl.glUniformMatrix4fv(VPLoc, 1, false, temp, 0)
-                    gl.glUniform3f(colorLoc, color.r, color.g, color.b)
+                    gl.glUniformMatrix4fv(mVPLoc, 1, false, mTemp, 0)
+                    gl.glUniform3f(mColorLoc, color.r, color.g, color.b)
                 }
             }
         }
@@ -82,11 +124,12 @@ class VoxelRenderer : BasicRenderer() {
 
     private fun countFPS() {
         val currentTime = System.nanoTime()
-        numFrame++
-        if (currentTime - prevTime >= 1_000_000_000) {
-            Log.v(TAG, "FPS: $numFrame")
-            numFrame = 0
-            prevTime = currentTime
+        mNumFrame++
+        if (currentTime - mPrevTime >= 1_000_000_000) {
+            Log.v(TAG, "FPS: $mNumFrame")
+            mNumFrame = 0
+            mPrevTime = currentTime
         }
     }
+
 }
