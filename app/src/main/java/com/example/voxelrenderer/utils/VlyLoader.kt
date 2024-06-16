@@ -1,7 +1,9 @@
 package com.example.voxelrenderer.utils
 
-import android.opengl.Matrix
 import android.util.Log
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.io.BufferedReader
 import java.io.InputStream
 
@@ -13,7 +15,7 @@ class VlyLoader(private val mInputStream: InputStream) {
     private var mNumY = 0
     private var mNumZ = 0
     private var mNumVoxels = 0
-    private val mColors = ArrayList<Color>()
+    private val mColors = ArrayList<MyColor>()
 
     fun load() {
         val lines = mInputStream.bufferedReader().use(
@@ -41,66 +43,77 @@ class VlyLoader(private val mInputStream: InputStream) {
             this[1].toInt()
         }
 
-        var voxelCount = 0
-        lines.subList(2, lines.size).forEach { line ->
-            val data = line.split(' ').map { it.toInt() }
-            if (voxelCount < mNumVoxels) {
-                val (x, y, z, value) = data
-                mVoxels.add(Voxel(x, y, z, value))
-                voxelCount++
-            } else {
-                mColors.add(
-                    Color(
-                        data[1].toFloat() / 255.0f,
-                        data[2].toFloat() / 255.0f,
-                        data[3].toFloat() / 255.0f
-                    )
-                )
+        val voxelLines = lines.subList(2, 2 + mNumVoxels)
+        val colorLines = lines.subList(2 + mNumVoxels, lines.size)
+
+        val time = System.nanoTime()
+        runBlocking {
+            launch(Dispatchers.Default) {
+                voxelLines
+                    .map { line ->
+                        line.split(' ').map { it.toInt() }
+                    }
+                    .forEach { (x, y, z, value) ->
+                        mVoxels.add(Voxel(x, y, z, value))
+                    }
+            }
+
+            launch(Dispatchers.Default) {
+                colorLines
+                    .map { line ->
+                        line.split(' ').map { it.toFloat() }
+                    }
+                    .forEach { (_, r, g, b) ->
+                        mColors.add(
+                            MyColor(
+                                r / 255.0f,
+                                g / 255.0f,
+                                b / 255.0f
+                            )
+                        )
+                    }
             }
         }
+
+        Log.v("", "TIme: ${(System.nanoTime()-time)/1000000f}ms")
+
     }
 
-    fun parse(): List<Mesh> {
+    fun parse(): Mesh {
         val cubeVertices = floatArrayOf(
             // front face
-            1.0f, 1.0f, 1.0f,
-            -1.0f, 1.0f, 1.0f,
-            -1.0f, -1.0f, 1.0f,
-            1.0f, -1.0f, 1.0f,
+            -0.5f, 0.5f, 0.5f,
+            0.5f, 0.5f, 0.5f,
+            -0.5f, -0.5f, 0.5f,
+            0.5f, -0.5f, 0.5f,
             // back face
-            1.0f, 1.0f, -1.0f,
-            -1.0f, 1.0f, -1.0f,
-            -1.0f, -1.0f, -1.0f,
-            1.0f, -1.0f, -1.0f,
+            -0.5f, 0.5f, -0.5f,
+            0.5f, 0.5f, -0.5f,
+            -0.5f, -0.5f, -0.5f,
+            0.5f, -0.5f, -0.5f,
         )
         val indices = intArrayOf(
-            0, 1, 2, 0, 2, 3, // front face
-            4, 5, 6, 4, 6, 7, // back face
-            0, 4, 7, 0, 7, 3, // right face
-            1, 5, 6, 1, 6, 2, // left face
-            0, 1, 5, 0, 5, 4, // top face
-            3, 2, 6, 3, 6, 7, // bottom face
+            0, 1, 2, 1, 3, 2, // front face
+            4, 6, 5, 5, 6, 7, // back face
+            1, 5, 3, 5, 7, 3, // right face
+            4, 0, 2, 4, 2, 6, // left face
+            0, 4, 1, 1, 4, 5, // top face
+            3, 6, 2, 3, 7, 6, // bottom face
         )
 
-        return mVoxels
-            .groupBy { it.value }
-            .map { (key, value) ->
-                val translations = value.map {
-                    val matrix = FloatArray(16)
+        val (translations, colors) =
+            mVoxels.map {
+                val x = it.x - mNumX / 2
+                val y = it.y - mNumY / 2
+                val z = it.z - mNumZ / 2
 
-                    // Translate the voxel to the center
-                    val x = it.x - mNumX / 2
-                    val y = it.y - mNumY / 2
-                    val z = it.z - mNumZ / 2
+                val color = mColors[it.value].toFloatArray()
 
-                    Matrix.setIdentityM(matrix, 0)
-                    Log.d("VlyLoader", "x: $x, y: $z, z: $y")
-                    Matrix.translateM(matrix, 0, -x.toFloat(), z.toFloat(), -y.toFloat())
-                    Matrix.scaleM(matrix, 0, 0.5f, 0.5f, 0.5f)
-                    matrix
-                }
+                Pair(floatArrayOf(-x.toFloat(), z.toFloat(), -y.toFloat()), color)
+            }.unzip()
 
-                Mesh(cubeVertices, indices, mColors[key], translations)
-            }
+
+        return Mesh(cubeVertices, indices, colors, translations)
     }
+
 }

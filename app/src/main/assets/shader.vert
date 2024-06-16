@@ -1,15 +1,14 @@
 #version 320 es
 
 layout (location = 0) in vec3 vPos;
-layout (location = 1) in mat4 model;
+layout (location = 1) in vec3 Color;
+layout (location = 2) in vec3 offset;
 
-//uniform mat4 model;
 uniform mat4 VP;
-uniform vec3 color;
 
-out vec3 colorVarying;
+out vec3 color;
 
 void main() {
-    colorVarying = color;
-    gl_Position = VP * model * vec4(vPos, 1);
+    color = Color;
+    gl_Position = VP * vec4(vPos + offset, 1);
 }

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="simple_model_dist">4</integer>
+    <integer name="chrk_model_dist">4</integer>
+    <integer name="dragon_model_dist">4</integer>
+    <integer name="monu2_model_dist">4</integer>
+    <integer name="monu16_model_dist">4</integer>
+    <integer name="christmas_model_dist">4</integer>
+</resources>

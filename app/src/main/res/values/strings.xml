@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">VoxelRenderer</string>
+    <string name="simple_model">simple.vly</string>
+    <string name="chrk_model">chrk.vly</string>
+    <string name="dragon_model">dragon.vly</string>
+    <string name="monu2_model">monu2.vly</string>
+    <string name="monu16_model">monu16.vly</string>
+    <string name="christmas_model">christmas.vly</string>
 </resources>
