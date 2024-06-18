@@ -19,4 +19,13 @@ class Shader(isV: InputStream, isF: InputStream) {
     fun getUniformLocation(name: String): Int {
         return GLES32.glGetUniformLocation(mShaderHandle, name)
     }
+
+    fun setMat4(name: String, mat: FloatArray) {
+        assert(mat.size == 16)
+        GLES32.glUniformMatrix4fv(getUniformLocation(name), 1, false, mat, 0)
+    }
+
+    fun setInt(name: String, value: Int) {
+        GLES32.glUniform1i(getUniformLocation(name), value)
+    }
 }

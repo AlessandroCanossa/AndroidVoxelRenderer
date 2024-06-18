@@ -13,8 +13,9 @@ import com.example.voxelrenderer.utils.Mesh
 private const val TOUCH_SCALE_FACTOR: Float = 180.0f / 320f
 
 @SuppressLint("ClickableViewAccessibility", "ViewConstructor")
-class VoxelSurfaceView(context: Context, mesh: Mesh) : GLSurfaceView(context) {
-    private val renderer = VoxelRenderer(mesh)
+class VoxelSurfaceView(context: Context, mesh: Mesh, initialDistance: Float) :
+    GLSurfaceView(context) {
+    private val renderer = VoxelRenderer(mesh, initialDistance)
 
     private val scaleListener = object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
         override fun onScale(detector: ScaleGestureDetector): Boolean {

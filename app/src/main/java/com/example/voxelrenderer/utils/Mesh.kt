@@ -21,11 +21,7 @@ class Mesh(
     private val mColors: List<FloatArray>,
     private val mTransformations: List<FloatArray>
 ) {
-    private var mVao = IntArray(1)
-    private var mVbo = IntArray(1)
-    private var mColorVbo = IntArray(1)
-    private var mModelVbo = IntArray(1)
-    private var mEbo = IntArray(1)
+    private val mVao = IntArray(1)
 
     /**
      * Draw the mesh
@@ -87,17 +83,22 @@ class Mesh(
                 }
         }
 
-        gl.glGenBuffers(1, mVbo, 0)
-        gl.glGenBuffers(1, mColorVbo, 0)
-        gl.glGenBuffers(1, mModelVbo, 0)
-        gl.glGenBuffers(1, mEbo, 0)
+        val vbo = IntArray(1)
+        val colorVbo = IntArray(1)
+        val modelVbo = IntArray(1)
+        val ebo = IntArray(1)
+
+        gl.glGenBuffers(1, vbo, 0)
+        gl.glGenBuffers(1, colorVbo, 0)
+        gl.glGenBuffers(1, modelVbo, 0)
+        gl.glGenBuffers(1, ebo, 0)
         gl.glGenVertexArrays(1, mVao, 0)
 
         gl.glBindVertexArray(mVao[0])
         // ------------------
         // Vertex
         // ------------------
-        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, mVbo[0])
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, vbo[0])
         gl.glBufferData(
             gl.GL_ARRAY_BUFFER,
             vertexData.capacity() * Float.SIZE_BYTES,
@@ -109,7 +110,7 @@ class Mesh(
         // ------------------
         // Color
         // ------------------
-        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, mColorVbo[0])
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, colorVbo[0])
         gl.glBufferData(
             gl.GL_ARRAY_BUFFER,
             colorsData.capacity() * Float.SIZE_BYTES,
@@ -122,7 +123,7 @@ class Mesh(
         // ------------------
         // Indices
         // ------------------
-        gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, mEbo[0])
+        gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, ebo[0])
         gl.glBufferData(
             gl.GL_ELEMENT_ARRAY_BUFFER,
             indicesData.capacity() * Int.SIZE_BYTES,
@@ -132,7 +133,7 @@ class Mesh(
         // ------------------
         // Model matrices
         // ------------------
-        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, mModelVbo[0])
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, modelVbo[0])
         gl.glBufferData(
             gl.GL_ARRAY_BUFFER,
             Float.SIZE_BYTES * matricesData.capacity(),
@@ -141,37 +142,7 @@ class Mesh(
         )
         gl.glVertexAttribPointer(2, 3, gl.GL_FLOAT, false, 3 * Float.SIZE_BYTES, 0)
         gl.glEnableVertexAttribArray(2)
-//        gl.glVertexAttribPointer(
-//            3,
-//            4,
-//            gl.GL_FLOAT,
-//            false,
-//            16 * Float.SIZE_BYTES,
-//            4 * Float.SIZE_BYTES
-//        )
-//        gl.glEnableVertexAttribArray(3)
-//        gl.glVertexAttribPointer(
-//            4,
-//            4,
-//            gl.GL_FLOAT,
-//            false,
-//            16 * Float.SIZE_BYTES,
-//            8 * Float.SIZE_BYTES
-//        )
-//        gl.glEnableVertexAttribArray(4)
-//        gl.glVertexAttribPointer(
-//            5,
-//            4,
-//            gl.GL_FLOAT,
-//            false,
-//            16 * Float.SIZE_BYTES,
-//            12 * Float.SIZE_BYTES
-//        )
-//        gl.glEnableVertexAttribArray(5)
         gl.glVertexAttribDivisor(2, 1)
-//        gl.glVertexAttribDivisor(3, 1)
-//        gl.glVertexAttribDivisor(4, 1)
-//        gl.glVertexAttribDivisor(5, 1)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
 
         gl.glBindVertexArray(0)

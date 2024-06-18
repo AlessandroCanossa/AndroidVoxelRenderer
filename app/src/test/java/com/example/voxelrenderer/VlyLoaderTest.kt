@@ -57,7 +57,7 @@ class VlyLoaderTest {
 
     @Test
     fun loadComplexModel() {
-        val complexModel = this.javaClass.classLoader?.getResourceAsStream("assets/dragon.vly")
+        val complexModel = this.javaClass.classLoader?.getResourceAsStream("raw/dragon.vly")
         if (complexModel != null) {
             loader = VlyLoader(complexModel)
             loader.load()
