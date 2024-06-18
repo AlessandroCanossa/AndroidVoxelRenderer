@@ -48,18 +48,6 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
-    sourceSets {
-        getByName("main") {
-            assets {
-                srcDirs("src/main/assets")
-            }
-        }
-        getByName("test") {
-            resources {
-                srcDirs("src/main")
-            }
-        }
-    }
 }
 
 dependencies {
