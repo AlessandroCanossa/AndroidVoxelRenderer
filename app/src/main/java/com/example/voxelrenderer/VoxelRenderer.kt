@@ -16,19 +16,19 @@ class VoxelRenderer(
     private lateinit var mShader: Shader
     private lateinit var skyboxShader: Shader
 
-    private var mVPLoc: Int = 0
-    private var mProjSkyboxLoc: Int = 0
-    private var mViewSkyboxLoc: Int = 0
-
     private val mViewM = FloatArray(16)
     private val mProjM = FloatArray(16)
     private val mRotationM = FloatArray(16)
     private val mTemp = FloatArray(16)
+    private val mSkyboxViewM = FloatArray(16)
 
     private var mPrevTime = System.nanoTime()
     private var mNumFrame = 0
 
     private val skybox = Skybox()
+
+    private val lightPosition = floatArrayOf(-100.0f, 1000.0f, -400.0f)
+    private val lightColor = floatArrayOf(1.0f, 1.0f, 1.0f)
 
     @Volatile
     var mScaleFactor = 1.0f
@@ -41,6 +41,15 @@ class VoxelRenderer(
         Matrix.setIdentityM(mViewM, 0)
         Matrix.setIdentityM(mProjM, 0)
         Matrix.setIdentityM(mRotationM, 0)
+        Matrix.setIdentityM(mTemp, 0)
+
+        Matrix.setLookAtM(
+            mSkyboxViewM, 0,
+            0f, 0f, 1f,
+            0f, 0f, 0f,
+            0f, 1f, 0f
+        )
+
     }
 
     override fun onSurfaceCreated(gl10: GL10?, config: EGLConfig?) {
@@ -67,9 +76,10 @@ class VoxelRenderer(
             context,
         )
 
-//        mVPLoc = mShader.getUniformLocation("VP")
-//        mProjSkyboxLoc = skyboxShader.getUniformLocation("projection")
-//        mViewSkyboxLoc = skyboxShader.getUniformLocation("view")
+        mShader.use {
+            it.setVec3("lightColor", lightColor)
+            it.setVec3("lightPos", lightPosition)
+        }
 
         skyboxShader.use {
             skybox.bindTexture()
@@ -94,7 +104,7 @@ class VoxelRenderer(
     override fun onDrawFrame(gl10: GL10?) {
         gl.glClear(gl.GL_COLOR_BUFFER_BIT or gl.GL_DEPTH_BUFFER_BIT)
 
-        countFPS()
+        val time = System.nanoTime()
 
         Matrix.setLookAtM(
             mViewM, 0,
@@ -106,30 +116,24 @@ class VoxelRenderer(
         Matrix.setIdentityM(mRotationM, 0)
         Matrix.rotateM(mRotationM, 0, mRotation, 0f, 1f, 0f)
         Matrix.multiplyMM(mTemp, 0, mProjM, 0, mViewM, 0)
-        Matrix.multiplyMM(mTemp, 0, mTemp, 0, mRotationM, 0)
 
         mShader.use {
-            mShader.setMat4("VP", mTemp)
-//            gl.glUniformMatrix4fv(mVPLoc, 1, false, mTemp, 0)
+            it.setMat4("VP", mTemp)
+            it.setMat4("rotation", mRotationM)
             mMesh.draw()
         }
 
         gl.glDepthFunc(gl.GL_LEQUAL)
         skybox.bindTexture()
         skyboxShader.use {
-            Matrix.setLookAtM(
-                mTemp, 0,
-                0f, 0f, 1f,
-                0f, 0f, 0f,
-                0f, 1f, 0f
-            )
-            skyboxShader.setMat4("view", mTemp)
-            skyboxShader.setMat4("projection", mProjM)
-//            gl.glUniformMatrix4fv(mProjSkyboxLoc, 1, false, mProjM, 0)
-//            gl.glUniformMatrix4fv(mViewSkyboxLoc, 1, false, mTemp, 0)
+            it.setMat4("view", mSkyboxViewM)
+            it.setMat4("projection", mProjM)
+            it.setMat4("rotation", mRotationM)
             skybox.draw()
         }
         gl.glDepthFunc(gl.GL_LESS)
+
+        Log.v(TAG, "Rendering time: ${(System.nanoTime() - time) / 1_000_000f}ms ")
     }
 
     private fun countFPS() {

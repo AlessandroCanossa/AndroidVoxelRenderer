@@ -10,7 +10,7 @@ import android.opengl.GLES32 as gl
 
 class Skybox {
     private val mVao = IntArray(1)
-    val textureId = IntArray(1)
+    private val textureId = IntArray(1)
     private val TAG = "Skybox"
 
     fun draw() {
@@ -93,11 +93,6 @@ class Skybox {
             val bitmap = BitmapFactory.decodeResource(context.resources, faces[it], options)
             if (bitmap == null) {
                 Log.e(TAG, "Failed to load texture from resource ${faces[it]}")
-            } else {
-                Log.v(
-                    TAG,
-                    "bitmap of size ${bitmap.width}x${bitmap.height} loaded with format ${bitmap.config.name}"
-                )
             }
             bitmap
         }

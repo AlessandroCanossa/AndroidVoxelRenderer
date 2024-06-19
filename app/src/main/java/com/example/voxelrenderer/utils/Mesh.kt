@@ -28,11 +28,17 @@ class Mesh(
      */
     fun draw() {
         gl.glBindVertexArray(mVao[0])
-        gl.glDrawElementsInstanced(
+//        gl.glDrawElementsInstanced(
+//            gl.GL_TRIANGLES,
+//            mIndices.size,
+//            gl.GL_UNSIGNED_INT,
+//            0,
+//            mTransformations.size
+//        )
+        gl.glDrawArraysInstanced(
             gl.GL_TRIANGLES,
-            mIndices.size,
-            gl.GL_UNSIGNED_INT,
             0,
+            mVertices.size / 6,
             mTransformations.size
         )
         gl.glBindVertexArray(0)
@@ -106,7 +112,16 @@ class Mesh(
             gl.GL_STATIC_DRAW
         )
         gl.glEnableVertexAttribArray(0)
-        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, false, 3 * Float.SIZE_BYTES, 0)
+        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, false, 6 * Float.SIZE_BYTES, 0)
+        gl.glEnableVertexAttribArray(3)
+        gl.glVertexAttribPointer(
+            3,
+            3,
+            gl.GL_FLOAT,
+            false,
+            6 * Float.SIZE_BYTES,
+            3 * Float.SIZE_BYTES
+        )
         // ------------------
         // Color
         // ------------------

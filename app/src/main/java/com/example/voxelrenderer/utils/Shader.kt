@@ -10,13 +10,13 @@ class Shader(isV: InputStream, isF: InputStream) {
         mShaderHandle = ShaderCompiler.createProgram(isV, isF)
     }
 
-    fun use(body: () -> Unit) {
+    fun use(body: (Shader) -> Unit) {
         GLES32.glUseProgram(mShaderHandle)
-        body()
+        body(this)
         GLES32.glUseProgram(0)
     }
 
-    fun getUniformLocation(name: String): Int {
+    private fun getUniformLocation(name: String): Int {
         return GLES32.glGetUniformLocation(mShaderHandle, name)
     }
 
@@ -27,5 +27,14 @@ class Shader(isV: InputStream, isF: InputStream) {
 
     fun setInt(name: String, value: Int) {
         GLES32.glUniform1i(getUniformLocation(name), value)
+    }
+
+    fun setVec3(name: String, x: Float, y: Float, z: Float) {
+        GLES32.glUniform3f(getUniformLocation(name), x, y, z)
+    }
+
+    fun setVec3(name: String, vec: FloatArray) {
+        assert(vec.size == 3)
+        GLES32.glUniform3fv(getUniformLocation(name), 1, vec, 0)
     }
 }
