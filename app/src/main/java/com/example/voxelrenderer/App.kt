@@ -13,10 +13,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -82,6 +84,8 @@ fun App(
                     LoadingScreen(appViewModel, onModelLoaded = {
                         Log.d("App", "Model loaded, navigating to renderer")
                         navController.navigate(Screens.Renderer.name)
+                    }, onError = {
+                        navController.navigate(Screens.Selector.name)
                     })
                 } else {
                     navController.navigate(Screens.Selector.name)
@@ -177,9 +181,32 @@ fun GlView(
 fun LoadingScreen(
     viewModel: VoxelViewModel,
     onModelLoaded: () -> Unit,
+    onError: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.voxelState.collectAsState()
+    var modelThrew by remember {
+        mutableStateOf("")
+    }
+
+    // If the model threw an exception, show an error dialog
+    if (modelThrew.isNotEmpty()) {
+        AlertDialog(
+            onDismissRequest = {
+                viewModel.clearModel()
+                onError()
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.clearModel()
+                    onError()
+                }) {
+                    Text(text = "Confirm")
+                }
+            },
+            text = { Text(text = modelThrew) })
+        return
+    }
     // If the model is already loaded, call the callback
     if (state.mesh != null) {
         onModelLoaded()
@@ -189,7 +216,16 @@ fun LoadingScreen(
     // Load the model in a background thread
     LaunchedEffect(Unit) {
         launch(Dispatchers.Default) {
-            viewModel.loadMesh(context)
+            try {
+                viewModel.loadMesh(context)
+            } catch (e: Exception) {
+                Log.e(
+                    "LoadingScreen",
+                    "Error loading model: ${context.resources.getString(state.model!!.name)}",
+                    e
+                )
+                modelThrew = e.message.toString()
+            }
         }
     }
 
